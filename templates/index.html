@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">SkinAid — AI Wound Assessment & Recovery Guidance</title>
+  <meta name="description" content="SkinAid: Your personal AI-powered wound assessment companion. Track healing progress, get instant care guidance, and recover with confidence." />
+  <meta name="theme-color" content="#7A1C29" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+</head>
+<body>
+
+  <!-- ── Urgent Care Alert Overlay ───────────────────────────── -->
+  <div class="emergency-overlay hidden" id="emergencyOverlay">
+    <div class="emergency-modal">
+      <div class="em-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--sev-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="em-title" id="emTitle" data-i18n="emergency_notice">EMERGENCY NOTICE</div>
+      <div class="em-desc" id="emergencyDesc">Critical triage warning active.</div>
+      <button class="btn-secondary" onclick="dismissEmergencyAlert()" data-i18n="emergency_close">Acknowledge &amp; Close</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       AUTHENTICATION SCREEN
+       ══════════════════════════════════════════════════════════ -->
+  <div class="auth-page" id="authPage">
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 100;">
+      <select class="lang-switcher-select" onchange="setLanguage(this.value)" style="background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 13.5px; font-family: inherit; font-weight: 600; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+      </select>
+    </div>
+    <!-- Left Panel: Product Hero -->
+    <div class="auth-hero-panel">
+      <div class="auth-hero-content">
+        <div class="auth-hero-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C12 2 20 9 20 14A8 8 0 0 1 4 14C4 9 12 2 12 2Z"/>
+            <path d="M12 10v6M9 13h6"/>
+          </svg>
+          <span data-i18n="brand">SkinAid</span>
+        </div>
+        <h1 class="auth-hero-title" data-i18n="personal_companion">Your Personal Wound Care Companion</h1>
+        <p class="auth-hero-desc" data-i18n="hero_desc">
+          Get instant AI-powered wound assessments, personalized recovery guidance, and track your healing journey — all from the comfort of home.
+        </p>
+
+        <div class="auth-features-list">
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+            <div class="auth-feature-text">
+              <h4 data-i18n="journey_capture">Instant Assessment</h4>
+              <p data-i18n="use_camera_desc">Snap a photo and get AI-powered wound analysis in seconds.</p>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <div class="auth-feature-text">
+              <h4 data-i18n="ai_assistant">AI Care Assistant</h4>
+              <p data-i18n="ai_help_desc">Your friendly digital health companion explains results and guides recovery.</p>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="m19 9-5 5-4-4-3 3"/>
+              </svg>
+            </div>
+            <div class="auth-feature-text">
+              <h4 data-i18n="journey_tracking">Recovery Tracking</h4>
+              <p data-i18n="history_subtitle">Monitor healing progress with visual timelines and personalized insights.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Authentication Form -->
+    <div class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C12 2 20 9 20 14A8 8 0 0 1 4 14C4 9 12 2 12 2Z"/>
+            <path d="M12 10v6M9 13h6"/>
+          </svg>
+        </div>
+        <h1 id="authMainTitle" data-i18n="welcome_back">Welcome Back</h1>
+        <p id="authSubTitle" data-i18n="signin_subtitle">Sign in to continue your healing journey</p>
+
+        <form id="patientAuthForm" onsubmit="event.preventDefault(); processAuthSubmit();" style="display: flex; flex-direction: column; width: 100%;">
+          <div class="form-group hidden" id="nameGroup">
+            <label class="form-label" for="authName" data-i18n="full_name">Full Name</label>
+            <input type="text" id="authName" name="name" autocomplete="name" class="form-input" placeholder="John Doe" data-i18n-placeholder="full_name" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="authEmail" data-i18n="email_address">Email Address</label>
+            <input type="email" id="authEmail" name="email" autocomplete="username" class="form-input" placeholder="name@example.com" data-i18n-placeholder="email_address" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="authPassword" data-i18n="password">Password</label>
+            <input type="password" id="authPassword" name="password" autocomplete="current-password" class="form-input" placeholder="••••••••" required />
+          </div>
+
+          <button type="submit" class="btn-primary" id="btnSubmitAuth" data-i18n="sign_in">
+            Sign In
+          </button>
+        </form>
+
+        <span class="auth-toggle" id="demoAutofillLink" style="margin-top: 10px; font-weight: 600; color: var(--primary); cursor: pointer;" onclick="autofillDemoCredentials()" data-i18n="autofill_demo">
+          ⚡ Autofill Demo Credentials
+        </span>
+
+        <span class="auth-toggle" id="authToggleText" onclick="toggleAuthForms()" data-i18n="dont_have_account">
+          Don't have an account? Sign Up
+        </span>
+        <span class="auth-toggle" style="margin-top: 10px; font-weight: 700; color: var(--accent);" onclick="window.location.href='/doctor'" data-i18n="switch_to_doctor">
+          Are you a Clinician? Access Doctor Portal
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MAIN PATIENT PORTAL VIEW
+       ══════════════════════════════════════════════════════════ -->
+  <div class="main-portal-view hidden" id="portalView">
+    <!-- Left Sidebar Navigation -->
+    <aside class="portal-sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C12 2 20 9 20 14A8 8 0 0 1 4 14C4 9 12 2 12 2Z"/>
+          <path d="M12 10v6M9 13h6"/>
+        </svg>
+        <span class="sidebar-logo-text" data-i18n="brand">SkinAid</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item active" onclick="goToDashboard()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> <span data-i18n="dashboard">Dashboard</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="scrollToUpload()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> <span data-i18n="new_assessment">New Assessment</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="scrollToHistory()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> <span data-i18n="care_history">Care History</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="showCareGuide()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg> <span data-i18n="care_guide">Care Guide</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="logUserOut()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span data-i18n="sign_out">Sign Out</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar" id="sidebarUserInitials">P</div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">Patient</span>
+            <span class="sidebar-user-role" data-i18n="personal_care">Personal Care</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="portal-workspace">
+      <!-- Top Navigation Bar -->
+      <nav class="navbar">
+        <div class="nav-brand" onclick="goToDashboard()">
+          <div class="nav-title-group">
+            <span class="nav-title" data-i18n="wound_care_dashboard">Wound Care Dashboard</span>
+            <span class="nav-subtitle" data-i18n="personal_companion">Your personal healing companion</span>
+          </div>
+        </div>
+        <div class="nav-user-actions" style="display: flex; align-items: center; gap: 12px;">
+          <span class="nav-badge" id="userDisplayBadge">User</span>
+          <select class="lang-switcher-select" onchange="setLanguage(this.value)" style="background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; outline: none;">
+            <option value="en">English</option>
+            <option value="ta">தமிழ்</option>
+          </select>
+        </div>
+      </nav>
+
+      <div class="workspace-content">
+
+        <!-- ══════════════════════════════════════════════════
+             PATIENT DASHBOARD
+             ══════════════════════════════════════════════════ -->
+        <div class="dashboard-container" id="patientDashboard">
+
+          <!-- ── HERO SECTION ──────────────────────────── -->
+          <div class="hero-card animate-on-scroll" id="heroCard">
+            <div class="hero-content">
+              <div class="hero-greeting" id="heroGreeting" data-i18n="good_evening">Good evening</div>
+              <h1 class="hero-title" id="heroTitle" data-i18n="how_is_wound">How is your wound healing today?</h1>
+              <p class="hero-subtitle" id="heroSubtitle" data-i18n="hero_desc">Track your recovery progress and get personalized care guidance from our AI assistant.</p>
+
+              <div class="hero-stats" id="heroStats">
+                <div class="hero-stat">
+                  <span class="hero-stat-value" id="heroLastStatus">—</span>
+                  <span class="hero-stat-label" data-i18n="last_status">Last Status</span>
+                </div>
+                <div class="hero-stat">
+                  <span class="hero-stat-value" id="heroAssessments">0</span>
+                  <span class="hero-stat-label" data-i18n="assessments">Assessments</span>
+                </div>
+              </div>
+
+              <button class="hero-cta" onclick="scrollToUpload()">
+                <span class="cta-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </span>
+                <span data-i18n="new_assessment">Start New Assessment</span>
+              </button>
+            </div>
+
+            <div class="hero-ring-wrapper" id="heroRingWrapper">
+              <div class="healing-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle class="ring-bg" cx="60" cy="60" r="52" />
+                  <circle class="ring-progress" id="heroRingProgress" cx="60" cy="60" r="52"
+                    stroke-dasharray="326.73"
+                    stroke-dashoffset="326.73" />
+                </svg>
+                <div class="ring-label">
+                  <span class="ring-value" id="heroHealingPct">—</span>
+                  <span class="ring-text" data-i18n="healing">Healing</span>
+                </div>
+              </div>
+              <span class="hero-ring-caption" data-i18n="overall_progress">Overall Progress</span>
+            </div>
+          </div>
+
+          <!-- ── HEALTH SUMMARY CARDS ──────────────────── -->
+          <div class="health-summary-grid animate-on-scroll" id="healthSummaryGrid">
+            <div class="summary-card">
+              <div class="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="M12 8v8"/>
+                  <path d="M8 12h8"/>
+                </svg>
+              </div>
+              <div class="summary-label" data-i18n="last_wound_status">Last Wound Status</div>
+              <div class="summary-value" id="summaryWoundStatus" data-i18n="no_data_yet">No data yet</div>
+              <div class="summary-subtext" id="summaryWoundSub" data-i18n="complete_first_assessment">Complete your first assessment</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3v18h18"/>
+                  <path d="m19 9-5 5-4-4-3 3"/>
+                </svg>
+              </div>
+              <div class="summary-label" data-i18n="healing_progress">Healing Progress</div>
+              <div class="summary-value" id="summaryHealingProgress">—</div>
+              <div class="summary-subtext" id="summaryHealingSub" data-i18n="start_tracking_today">Start tracking today</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div class="summary-label" data-i18n="est_recovery">Est. Recovery</div>
+              <div class="summary-value" id="summaryRecoveryTime">—</div>
+              <div class="summary-subtext" id="summaryRecoverySub" data-i18n="based_on_ai">Based on AI analysis</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+              </div>
+              <div class="summary-label" data-i18n="ai_assistant">AI Assistant</div>
+              <div class="summary-value" id="summaryAIStatus" data-i18n="ready">Ready</div>
+              <div class="summary-subtext" id="summaryAISub" data-i18n="online_available">Online & available</div>
+            </div>
+          </div>
+
+          <!-- ── ASSESSMENT JOURNEY ────────────────────── -->
+          <div class="journey-section animate-on-scroll" id="journeySection">
+            <div class="journey-title" data-i18n="assessment_journey_title">Your Assessment Journey</div>
+            <div class="journey-subtitle" data-i18n="assessment_journey_subtitle">Follow these simple steps to get personalized wound care guidance</div>
+            <div class="journey-steps" id="journeySteps">
+              <div class="journey-step" id="journeyStep1">
+                <div class="step-circle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </div>
+                <div class="step-label" data-i18n="journey_capture">Capture Image</div>
+              </div>
+              <div class="journey-step" id="journeyStep2">
+                <div class="step-circle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                  </svg>
+                </div>
+                <div class="step-label" data-i18n="journey_analysis">AI Analysis</div>
+              </div>
+              <div class="journey-step" id="journeyStep3">
+                <div class="step-circle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="6"/>
+                    <circle cx="12" cy="12" r="2"/>
+                  </svg>
+                </div>
+                <div class="step-label" data-i18n="journey_severity">Severity Detection</div>
+              </div>
+              <div class="journey-step" id="journeyStep4">
+                <div class="step-circle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                    <path d="m8.5 8.5 7 7"/>
+                  </svg>
+                </div>
+                <div class="step-label" data-i18n="journey_guidance">Care Guidance</div>
+              </div>
+              <div class="journey-step" id="journeyStep5">
+                <div class="step-circle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 3v18h18"/>
+                    <path d="m19 9-5 5-4-4-3 3"/>
+                  </svg>
+                </div>
+                <div class="step-label" data-i18n="journey_tracking">Recovery Tracking</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── MAIN CONTENT: Upload + Recent Assessments ── -->
+          <div class="dashboard-grid">
+
+            <!-- LEFT: Upload & Camera -->
+            <div>
+              <div class="upload-card" id="genUploadCard">
+                <!-- Gradient accent header -->
+                <div class="upload-card-header">
+                  <div class="upload-header-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="upload-card-title" data-i18n="start_assessment_title">Start Your Assessment</h3>
+                    <p class="upload-card-subtitle" data-i18n="start_assessment_subtitle">Capture or upload a wound photo for instant AI-powered analysis</p>
+                  </div>
+                </div>
+
+                <!-- Drag & Drop Zone -->
+                <div class="upload-dropzone" id="uploadDropzone">
+                  <div class="dropzone-visual">
+                    <div class="dropzone-icon-ring">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17,8 12,3 7,8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                    </div>
+                    <p class="dropzone-text" data-i18n="drag_drop_text">Drag & drop your wound photo here</p>
+                    <p class="dropzone-hint" data-i18n="choose_method">or choose a method below</p>
+                  </div>
+                </div>
+
+                <!-- Option Buttons -->
+                <div class="upload-options">
+                  <button class="upload-option-btn camera-btn" onclick="activateWebcamStream()">
+                    <div class="upload-option-icon camera-icon-bg">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                    </div>
+                    <div class="upload-option-text">
+                      <span class="upload-option-title" data-i18n="use_camera">Use Camera</span>
+                      <span class="upload-option-desc" data-i18n="use_camera_desc">Take a live photo with your device camera</span>
+                    </div>
+                    <span class="upload-option-arrow">→</span>
+                  </button>
+
+                  <button class="upload-option-btn file-btn" onclick="event.stopPropagation(); document.getElementById('patFileInput').click()">
+                    <div class="upload-option-icon file-icon-bg">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                      </svg>
+                    </div>
+                    <div class="upload-option-text">
+                      <span class="upload-option-title" data-i18n="upload_photo">Upload Photo</span>
+                      <span class="upload-option-desc" data-i18n="upload_photo_desc">Choose an existing image from your device</span>
+                    </div>
+                    <span class="upload-option-arrow">→</span>
+                  </button>
+                </div>
+
+                <!-- Reassurance Tip -->
+                <div class="upload-tip">
+                  <span class="upload-tip-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </span>
+                  <span data-i18n="security_tip">Your photos are analyzed securely and never shared with third parties.</span>
+                </div>
+
+                <input type="file" id="patFileInput" accept="image/*" hidden />
+              </div>
+
+              <!-- Camera Stream -->
+              <div class="card hidden" id="cameraCard">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </div>
+                  <h3 class="card-title" data-i18n="camera_capture_title">Camera Capture</h3>
+                  <button class="btn-secondary" style="margin-left: auto;" onclick="deactivateWebcamStream()" data-i18n="cancel">Cancel</button>
+                </div>
+                <div class="camera-container">
+                  <video id="webcamVideo" class="camera-feed" autoplay playsinline></video>
+                  <canvas id="photoCanvas" class="camera-canvas" width="640" height="480"></canvas>
+                </div>
+                <button class="btn-primary btn-teal" style="width: 100%;" onclick="captureWebcamFrame()" data-i18n="take_photo">
+                  📸 Capture Photo
+                </button>
+              </div>
+
+              <!-- Image Preview -->
+              <div class="card hidden" id="patPreviewCard">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                  <h3 class="card-title" data-i18n="photo_preview_title">Photo Preview</h3>
+                  <button class="btn-secondary" style="margin-left: auto;" onclick="clearWoundImage()" data-i18n="clear">Clear</button>
+                </div>
+                <div class="preview-wrapper">
+                  <img id="patPreviewImg" class="preview-img" src="" alt="Wound Photo Preview" />
+                </div>
+                <button class="btn-primary" style="width: 100%;" id="patAnalyzeBtn" onclick="initiateAIEvaluation()" data-i18n="analyze_wound_btn">
+                  🔬 Analyze Wound
+                </button>
+              </div>
+
+              <!-- AI Loader -->
+              <div class="card hidden" id="patLoaderCard">
+                <div class="loader-card">
+                  <p style="font-weight: 800; font-size: 17.5px; color: var(--text-main);" data-i18n="analyzing_wound_title">Analyzing Your Wound</p>
+                  <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;" data-i18n="analyzing_wound_desc">Our clinical AI engine is generating your diagnostics telemetry...</p>
+
+                  <div class="loader-pipeline">
+                    <div class="loader-step" id="loadStep1">
+                      <div class="step-indicator-dot"></div>
+                      <span data-i18n="step_received">Image Received</span>
+                    </div>
+                    <div class="loader-step" id="loadStep2">
+                      <div class="step-indicator-dot"></div>
+                      <span data-i18n="step_vision">Vision Analysis</span>
+                    </div>
+                    <div class="loader-step" id="loadStep3">
+                      <div class="step-indicator-dot"></div>
+                      <span data-i18n="step_clinical">Clinical Assessment</span>
+                    </div>
+                    <div class="loader-step" id="loadStep4">
+                      <div class="step-indicator-dot"></div>
+                      <span data-i18n="step_risk">Risk Evaluation</span>
+                    </div>
+                    <div class="loader-step" id="loadStep5">
+                      <div class="step-indicator-dot"></div>
+                      <span data-i18n="step_recovery">Recovery Prediction</span>
+                    </div>
+                    <div class="loader-step" id="loadStep6">
+                      <div class="step-indicator-dot"></div>
+                      <span data-i18n="step_completed">Completed</span>
+                    </div>
+                  </div>
+
+                  <div style="width: 100%; height: 6px; background: var(--bg-secondary); border-radius: 99px; overflow: hidden; margin-top: 24px;">
+                    <div id="patProgressBar" style="width: 0%; height: 100%; border-radius: 99px; transition: width 0.2s;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: Recent Assessments + AI Assistant -->
+            <div>
+              <!-- Recent Assessments Timeline -->
+              <div class="timeline-section" id="timelineSection">
+                <div class="timeline-section-header">
+                  <h3 class="timeline-section-title" data-i18n="recent_analyses">Recent Assessments</h3>
+                </div>
+                <div class="timeline-list stagger-children" id="timelineList">
+                  <!-- Populated dynamically OR empty state shown -->
+                </div>
+              </div>
+
+              <!-- AI Care Assistant Area -->
+              <div class="ai-assistant-section animate-on-scroll" id="aiAssistantSection">
+                <div class="ai-assistant-text">
+                  <h3 class="ai-assistant-title" data-i18n="need_help">Need help understanding your wound?</h3>
+                  <p class="ai-assistant-desc" data-i18n="ai_help_desc">Our AI care assistant can explain your results, guide you through first aid steps, and predict your recovery timeline.</p>
+                  <div class="ai-assistant-actions">
+                    <div class="ai-action-chip" onclick="showCareGuide()" data-i18n="first_aid_chip">First Aid</div>
+                    <div class="ai-action-chip" onclick="showCareGuide()" data-i18n="results_chip">Results</div>
+                    <div class="ai-action-chip" onclick="showCareGuide()" data-i18n="recovery_chip">Recovery</div>
+                  </div>
+                </div>
+                <div class="ai-assistant-visual" style="display: flex; align-items: center; justify-content: center;">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+          </div> <!-- closes dashboard-grid -->
+
+        </div> <!-- Closes patientDashboard -->
+
+        <!-- ══════════════════════════════════════════════════
+             ASSESSMENT HISTORY PAGE (Separate View)
+             ══════════════════════════════════════════════════ -->
+        <div class="dashboard-container hidden" id="patHistoryPage">
+          <div class="welcome-banner">
+            <div class="welcome-text">
+              <h2 data-i18n="history_title">Your Healing Journey</h2>
+              <p data-i18n="history_subtitle">View and track all your past wound assessments and recovery progress.</p>
+            </div>
+          </div>
+
+          <div class="card" id="patHistoryCard" style="margin-top: 8px;">
+            <div class="card-header">
+              <div class="card-icon teal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <h3 class="card-title" data-i18n="history_card_title">Assessment History</h3>
+            </div>
+            <div class="history-list" id="patHistoryList">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             ROBOT ASSISTANT (Post-Analysis)
+             ══════════════════════════════════════════════════ -->
+        <div class="dashboard-container hidden" id="patRobotSection">
+          <div class="robot-assistant-card">
+            <div class="cute-robot">
+              <div class="robot-body-wrapper">
+                <div class="robot-shadow"></div>
+                <div class="robot-antenna">
+                  <div class="antenna-tip"></div>
+                  <div class="antenna-rod"></div>
+                </div>
+                <div class="robot-ears">
+                  <div class="robot-ear"></div>
+                  <div class="robot-ear"></div>
+                </div>
+                <div class="robot-head" id="robotAvatarHead">
+                  <div class="robot-face">
+                    <div class="robot-eyes">
+                      <div class="robot-eye"></div>
+                      <div class="robot-eye"></div>
+                    </div>
+                    <div class="robot-mouth">
+                      <div class="mouth-line"></div>
+                      <div class="speaking-waves">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="robot-neck"></div>
+                <div class="robot-torso">
+                  <div class="robot-heart"></div>
+                  <div class="robot-arm left"></div>
+                  <div class="robot-arm right"></div>
+                </div>
+              </div>
+            </div>
+            <div class="voice-waves" id="voiceWaves">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <h3 style="font-size: 17px; font-weight: 800; color: var(--text-main);" data-i18n="care_assistant_title">Your Care Assistant</h3>
+            <div class="robot-dialog-bubble" id="robotDialogBubble">
+              "Hello! Your assessment is ready. Click below to hear my recommendations."
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn-primary btn-teal" id="btnPlayRobot" onclick="speakRobotGuidance()" data-i18n="play_voice_guide">
+                🔊 Play Voice Guide
+              </button>
+              <button class="btn-secondary hidden" id="btnStopRobot" onclick="stopRobotGuidance()" data-i18n="stop_voice_guide">
+                Stop
+              </button>
+              <button class="btn-primary" id="btnShowDetails" onclick="showDetailedReport()" style="width: auto;" data-i18n="view_full_report">
+                📊 View Full Report
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════
+             AI ASSESSMENT RESULTS (SOAP Report)
+             ══════════════════════════════════════════════════ -->
+        <div class="dashboard-container hidden" id="patResultsSection">
+          <div class="card soap-document" style="position: relative; overflow: hidden; margin-top: 24px;">
+
+            <!-- Watermark -->
+            <div style="position: absolute; right: 20px; top: 80px; font-size: 90px; color: rgba(79, 70, 229, 0.03); font-weight: 900; pointer-events: none; user-select: none;">Rx</div>
+
+            <!-- Document Header -->
+            <div style="border-bottom: 2px double var(--primary); padding-bottom: 24px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <span style="font-size: 10px; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 4px;" data-i18n="assessment_journey_title">Assessment Report</span>
+                <h2 style="font-size: 24px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: -0.5px; margin: 0; line-height: 1.1;" data-i18n="report_title">Clinical Care Report</h2>
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">SkinAid AI Wound Assessment</span>
+              </div>
+              <div style="text-align: right; background: var(--primary-light); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(79, 70, 229, 0.1);">
+                <span class="meta-label" style="display: block; margin-bottom: 2px;" data-i18n="priority_score">Priority Score</span>
+                <span id="resPriorityScore" style="font-size: 24px; font-weight: 900; color: var(--primary);">—</span>
+              </div>
+            </div>
+
+            <!-- S: Subjective -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: 12px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="profile">S — Your Profile</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="patient_name">Patient Name</span>
+                  <span id="resPatientName" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="record_id">Record ID</span>
+                  <span id="resPatientId" style="font-weight: 700; font-family: monospace; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="severity_level">Severity Level</span>
+                  <span id="resSeverityBadge" style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 800; border-radius: 6px; color: #ffffff; text-transform: uppercase;">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- O: Objective -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: 12px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="image_analysis">O — Image Analysis</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="estimated_size">Estimated Size</span>
+                  <span id="resWoundSize" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="redness_level">Redness Level</span>
+                  <span id="resRednessRatio" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="image_quality">Image Quality</span>
+                  <span id="resImgResolution" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="brightness">Brightness</span>
+                  <span id="resImgBrightness" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- A: Assessment -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: 12px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="ai_assessment">A — AI Assessment</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="wound_type">Wound Type</span>
+                  <span id="resWoundType" style="font-weight: 700; color: var(--primary); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="confidence">Confidence</span>
+                  <span id="resConfidence" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="infection_risk">Infection Risk</span>
+                  <span id="resInfectionLevel" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="wound_stage">Wound Stage</span>
+                  <span id="resWoundStage" style="font-weight: 700; color: var(--text-main); font-size: 14px;">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- P: Plan -->
+            <div>
+              <h4 style="font-size: 12px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="care_plan">P — Your Care Plan</h4>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 8px;" data-i18n="first_aid_steps">First Aid Steps</span>
+                  <div id="resFirstAidChecklist" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 8px;" data-i18n="recommended_products">Recommended Products</span>
+                  <div id="resOintmentsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+              </div>
+
+              <div id="resHospitalCard" style="border-left: 4px solid var(--primary); padding: 14px 18px; background: var(--primary-light); border-radius: 12px; margin-bottom: 20px;">
+                <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="care_recommendation">Care Recommendation</span>
+                <p id="resHospitalText" style="font-size: 13px; font-weight: 700; color: var(--text-main); margin: 0;">—</p>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="expected_recovery">Expected Recovery</span>
+                  <span id="resRecoveryTime" style="font-weight: 700; color: var(--text-main); font-size: 16px;">—</span>
+                </div>
+                <div>
+                  <span class="meta-label" style="display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;" data-i18n="healing">Healing Score</span>
+                  <span id="resHealingPct" style="font-weight: 800; color: var(--primary); font-size: 18px;">—</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div> <!-- Closes workspace-content -->
+    </div> <!-- Closes portal-workspace -->
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-bottom-nav">
+      <div class="mobile-nav-item active" onclick="goToDashboard()">
+        <span class="mobile-nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <span class="mobile-nav-text" data-i18n="dashboard">Home</span>
+      </div>
+      <div class="mobile-nav-item" onclick="scrollToUpload()">
+        <span class="mobile-nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </span>
+        <span class="mobile-nav-text" data-i18n="new_assessment">Scan</span>
+      </div>
+      <div class="mobile-nav-item" onclick="scrollToHistory()">
+        <span class="mobile-nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span class="mobile-nav-text" data-i18n="care_history">History</span>
+      </div>
+      <div class="mobile-nav-item" onclick="showCareGuide()">
+        <span class="mobile-nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+        </span>
+        <span class="mobile-nav-text" data-i18n="care_guide">Guide</span>
+      </div>
+      <div class="mobile-nav-item" onclick="logUserOut()">
+        <span class="mobile-nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+        <span class="mobile-nav-text" data-i18n="sign_out">Logout</span>
+      </div>
+    </div>
+  </div> <!-- Closes main-portal-view -->
+
+  <!-- Footer -->
+  <footer>
+    <span data-i18n="footer_text">© 2026 SkinAid — Your trusted wound care companion</span>
+  </footer>
+
+  <!-- Floating Robot Assistant Widget -->
+  <div class="floating-robot-widget" id="floatingRobotWidget">
+    <div class="floating-bubble" id="floatingBubble">
+      <div class="bubble-header">
+        <span data-i18n="care_assistant_title">Assistant Bot</span>
+        <button class="close-bubble-btn" onclick="toggleFloatingBubble(event)">×</button>
+      </div>
+      <div class="bubble-text" id="floatingBubbleText" data-i18n="first_assessment_desc">
+        Hello! I'm your SkinAid guide. Scan or upload a wound image to start.
+      </div>
+      <div class="bubble-actions">
+        <button class="bubble-action-btn" onclick="startFloatingSpeech()" data-i18n="play_voice_guide">🔊 Hear Guidance</button>
+      </div>
+    </div>
+    
+    <div class="floating-robot-avatar" onclick="toggleFloatingBubble(event)" id="floatingRobotAvatar">
+      <div class="widget-robot-ears">
+        <div class="widget-ear"></div>
+        <div class="widget-ear"></div>
+      </div>
+      <div class="widget-robot-head" id="floatingRobotHead">
+        <div class="widget-robot-face">
+          <div class="widget-robot-eyes">
+            <div class="widget-robot-eye"></div>
+            <div class="widget-robot-eye"></div>
+          </div>
+          <div class="widget-robot-mouth">
+            <div class="widget-mouth-line"></div>
+            <div class="widget-speaking-waves">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="widget-robot-torso">
+        <div class="widget-robot-heart"></div>
+      </div>
+      <div class="widget-robot-shadow"></div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

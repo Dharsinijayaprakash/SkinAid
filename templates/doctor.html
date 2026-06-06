@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">SkinAid AI — Doctor Portal (Clinical Decision Support)</title>
+  <meta name="description" content="AI-assisted clinical decision support platform for wound assessment and monitoring." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  
+  <!-- Styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/doctor.css') }}" />
+  <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+</head>
+<body>
+
+  <!-- ── AUTHENTICATION SCREEN ──────────────── -->
+  <div class="auth-page" id="doctorAuthPage">
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 100;">
+      <select class="lang-switcher-select" onchange="setLanguage(this.value)" style="background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 13.5px; font-family: inherit; font-weight: 600; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+      </select>
+    </div>
+    <div class="auth-card glass-panel">
+      <div class="auth-header">
+        <div class="auth-logo" style="width: 48px; height: 48px; margin: 0 auto 20px; font-size: 40px; line-height: 48px;">
+          🩺
+        </div>
+        <h1 id="authTitle" data-i18n="welcome_doctor">Welcome Back, Doctor</h1>
+        <p id="authSubtitle" data-i18n="doc_signin_subtitle">Sign in to access the SkinAid AI Doctor Portal</p>
+      </div>
+
+      <!-- Credentials Forms -->
+      <div id="credentialsForm" class="credentials-container">
+        <form id="doctorAuthForm" onsubmit="event.preventDefault(); triggerDoctorLogin();" style="display: flex; flex-direction: column; width: 100%;">
+          <div class="form-group hidden" id="docNameGroup">
+            <label class="form-label" for="docName" data-i18n="full_name">Full Name</label>
+            <input type="text" id="docName" name="name" autocomplete="name" class="form-input" placeholder="e.g. Dr. Alex Smith" data-i18n-placeholder="full_name" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="docEmail" data-i18n="email_address">Email address</label>
+            <input type="email" id="docEmail" name="email" autocomplete="username" class="form-input" placeholder="e.g. smith@skinaid.org" data-i18n-placeholder="email_address" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="docPassword" data-i18n="password">Password</label>
+            <input type="password" id="docPassword" name="password" autocomplete="current-password" class="form-input" placeholder="••••••••" required />
+          </div>
+          <div class="form-group hidden" id="docMajorGroup">
+            <label class="form-label" for="docMajor" data-i18n="doc_department">Department specialty / major</label>
+            <input type="text" id="docMajor" name="major" autocomplete="organization-title" class="form-input" placeholder="e.g. Dermatology" />
+          </div>
+
+          <button type="submit" class="btn-clinical-primary" id="btnSubmitDocAuth" data-i18n="doc_signin_btn">
+            Sign In &amp; Authorize
+          </button>
+        </form>
+
+        <span class="auth-toggle-link" id="docDemoAutofillLink" style="margin-top: 10px; font-weight: 600; color: var(--clinical-blue); cursor: pointer; text-align: center;" onclick="autofillDoctorDemoCredentials()" data-i18n="autofill_demo">
+          ⚡ Autofill Demo Credentials
+        </span>
+
+        <span class="auth-toggle-link" id="docAuthToggleText" onclick="toggleDocAuthForms()" data-i18n="dont_have_account">
+          Don't have an account? Sign Up
+        </span>
+      </div>
+
+      <!-- Welcome panel (rendered after validation completes) -->
+      <div id="welcomePanel" class="hidden">
+        <div class="welcome-notices-container" style="background: var(--clinical-blue-light); border: 1px solid rgba(122, 28, 41, 0.2);">
+          <h4 style="color: var(--clinical-blue);" data-i18n="access_approved">Access Approved</h4>
+          <p><span data-i18n="credentials_authorized">Clinical Credentials Authorized</span>: <strong id="welcomeSpecialty">Dermatology</strong>.</p>
+        </div>
+        <button class="btn-clinical-primary" onclick="proceedToWorkspace()" data-i18n="enter_dashboard">
+          Enter Clinical Dashboard
+        </button>
+      </div>
+
+      <span class="auth-toggle-link" onclick="window.location.href='/'" data-i18n="switch_to_patient">
+        ← Switch to Patient Portal
+      </span>
+    </div>
+  </div>
+
+  <!-- ── MAIN CLINICAL WORKSPACE VIEW ─────────────────────────── -->
+  <div class="main-clinical-view hidden" id="doctorWorkspace">
+    <!-- Left Sidebar Navigation -->
+    <aside class="portal-sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--clinical-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C12 2 20 9 20 14A8 8 0 0 1 4 14C4 9 12 2 12 2Z"/>
+          <path d="M12 10v6M9 13h6"/>
+        </svg>
+        <span class="sidebar-logo-text" data-i18n="brand">SkinAid</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item active" id="navDoctorDashboard" onclick="goToDoctorDashboard()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> <span data-i18n="dashboard">Dashboard</span>
+        </div>
+        <div class="sidebar-nav-item" id="navDoctorCases" onclick="goToDoctorCases()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> <span data-i18n="care_history">Clinical Workspace</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="logDoctorOut()">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span data-i18n="sign_out">Sign Out</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar" id="sidebarDoctorInitials">DS</div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarDoctorName">Dr. Smith</span>
+            <span class="sidebar-user-role" id="sidebarDoctorRole" data-i18n="clinician">Clinician</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="portal-workspace">
+      <!-- Top Navigation Bar -->
+      <nav class="navbar">
+        <div class="nav-brand" onclick="goToDoctorDashboard()">
+          <div class="nav-title-group">
+            <span class="nav-title" data-i18n="clinician_dashboard">SkinAid Clinician Dashboard</span>
+            <span class="nav-subtitle" id="doctorNavSubtitle" data-i18n="cdss_subtitle">Clinical Decision Support Systems</span>
+          </div>
+        </div>
+        <div class="nav-user-actions" style="display: flex; align-items: center; gap: 12px;">
+          <span class="nav-badge" id="doctorBadge">Dr. Smith (Dermatology)</span>
+          <select class="lang-switcher-select" onchange="setLanguage(this.value)" style="background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; outline: none;">
+            <option value="en">English</option>
+            <option value="ta">தமிழ்</option>
+          </select>
+        </div>
+      </nav>
+
+      <div class="workspace-content" style="padding: 24px; display: flex; flex-direction: column; gap: 24px; flex-grow: 1;">
+        <div id="doctorDashboardView" class="dashboard-view-content">
+          <div class="dashboard-hero-row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+            <div class="glass-panel" style="padding: 32px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, rgba(122,28,41,0.05), rgba(179,142,93,0.05)); border-left: 5px solid var(--clinical-blue);">
+              <h2 style="font-size: 28px; font-weight: 800; color: var(--clinical-blue); margin-bottom: 8px;" data-i18n="workstation_title">Clinical Analysis Workstation</h2>
+              <p style="color: var(--text-sub); font-size: 15px; margin-bottom: 20px;" data-i18n="workstation_desc">Upload diagnostic-grade wound photography or DICOM files to trigger advanced multi-spectral AI diagnostic telemetry and generate structured medical documentation.</p>
+              <button class="btn-clinical-primary" style="width: fit-content; padding: 12px 28px; font-size: 14px;" onclick="goToDoctorCases()" data-i18n="start_new_clinical">
+                🔬 Start New Clinical Analysis
+              </button>
+            </div>
+            
+            <div class="metric-card glass-panel" style="padding: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+              <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--clinical-teal); letter-spacing: 1px; margin-bottom: 12px;" data-i18n="accuracy_title">AI Model Accuracy</span>
+              <span class="metric-num text-main" style="font-size: 48px; font-weight: 900; line-height: 1; margin-bottom: 8px; color: var(--clinical-blue);">96.4%</span>
+              <span style="font-size: 12px; color: var(--text-muted);" data-i18n="accuracy_desc">Validated on 10k+ multi-ethnic clinical datasets</span>
+            </div>
+          </div>
+
+          <div class="analytics-grid-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px;">
+            <div class="metric-card glass-panel" style="padding: 24px; display: flex; flex-direction: column; gap: 8px;">
+              <span class="metric-label" style="font-size: 13px; font-weight: 600; color: var(--text-sub);" data-i18n="total_analyses">Total Analyses Performed</span>
+              <span class="metric-num text-main" id="dashTotalAnalyses" style="font-size: 36px; font-weight: 800;">0</span>
+              <span class="trend-indicator trend-up" style="font-size: 12px; color: var(--color-minimal);">↑ 18% this month</span>
+            </div>
+            <div class="metric-card glass-panel" style="padding: 24px; display: flex; flex-direction: column; gap: 8px;">
+              <span class="metric-label" style="font-size: 13px; font-weight: 600; color: var(--text-sub);" data-i18n="avg_healing">Average Healing Prediction</span>
+              <span class="metric-num text-main" id="dashAvgHealing" style="font-size: 36px; font-weight: 800;">74.0%</span>
+              <span class="trend-indicator trend-up" style="font-size: 12px; color: var(--color-minimal);">📈 Positive healing trend</span>
+            </div>
+            <div class="metric-card glass-panel" style="padding: 24px; display: flex; flex-direction: column; gap: 8px;">
+              <span class="metric-label" style="font-size: 13px; font-weight: 600; color: var(--text-sub);" data-i18n="telemetry_index">AI Diagnostic Telemetry Index</span>
+              <span class="metric-num text-main" style="font-size: 36px; font-weight: 800;" data-i18n="active">Active</span>
+              <span class="trend-indicator trend-up" style="font-size: 12px; color: var(--color-minimal);">Realtime CDS Module</span>
+            </div>
+          </div>
+
+          <!-- Recent Analyses Table -->
+          <div class="glass-panel" style="padding: 24px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;" data-i18n="recent_analyses">Recent Diagnostic Analyses</h3>
+            <div class="table-responsive">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;" id="recentAnalysesTable">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-transform: uppercase;">
+                    <th style="padding: 12px;" data-i18n="record_id">Record ID</th>
+                    <th style="padding: 12px;">Date</th>
+                    <th style="padding: 12px;" data-i18n="wound_type">Classification</th>
+                    <th style="padding: 12px;" data-i18n="severity_level">Severity</th>
+                    <th style="padding: 12px;" data-i18n="confidence">AI Confidence</th>
+                    <th style="padding: 12px; text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recentAnalysesBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <div id="doctorCasesView" class="hidden">
+        <div class="workspace-layout">
+      
+      <!-- Placeholder: Clinical Diagnostic Uploader when no analysis is active -->
+      <div class="empty-state-view glass-panel animate-on-scroll" id="emptyCaseState" style="padding: 60px 40px; text-align: center; max-width: 800px; margin: 40px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;">
+        <div style="font-size: 64px; line-height: 1;">🔬</div>
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--clinical-blue);" data-i18n="workstation_title">Wound Telemetry Acquisition Workstation</h2>
+        <p style="color: var(--text-sub); max-width: 500px; font-size: 14.5px; margin: 0;" data-i18n="workstation_desc">Upload a clinical photograph or medical DICOM file. The SkinAid AI engine will run multi-spectral tissue classifications, boundary trace models, and healing forecast simulations.</p>
+        
+        <div class="acq-upload-area" id="docUploadBox" style="width: 100%; max-width: 500px; padding: 40px 20px; border: 2px dashed rgba(122, 28, 41, 0.3); border-radius: 12px; background: rgba(122, 28, 41, 0.02); cursor: pointer; transition: all 0.2s;">
+          <span style="font-size: 40px; margin-bottom: 12px; display: block;">📁</span>
+          <p style="font-weight: 600; color: var(--clinical-blue); margin-bottom: 4px;" data-i18n="drag_drop_text">Drag &amp; Drop Image or DICOM File Here</p>
+          <span style="font-size: 12px; color: var(--text-muted);">Supports PNG, JPG, JPEG, WEBP, and DICOM (.dcm)</span>
+          <input type="file" id="docFileInput" accept="image/*,.dcm" hidden />
+        </div>
+        
+        <div style="display: flex; gap: 16px;">
+          <button class="btn-clinical-secondary" onclick="activateDocWebcam()" style="padding: 10px 20px;" data-i18n="use_camera">📷 Live Device Camera</button>
+        </div>
+
+        <!-- Live camera capture stream -->
+        <div class="webcam-stream-container hidden" id="docWebcamContainer" style="width: 100%; max-width: 500px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative;">
+          <video id="docWebcamVideo" autoplay playsinline style="width: 100%; height: 240px; object-fit: cover;"></video>
+          <canvas id="docWebcamCanvas" width="640" height="480" style="display: none;"></canvas>
+          <div style="padding: 12px; display: flex; gap: 12px; justify-content: center; background: rgba(0,0,0,0.8);">
+            <button class="btn-clinical-primary" style="padding: 8px 16px; font-size: 13px;" onclick="captureDocWebcamFrame()" data-i18n="take_photo">Take Snapshot</button>
+            <button class="btn-clinical-secondary" style="padding: 8px 16px; font-size: 13px; color: #fff;" onclick="deactivateDocWebcam()" data-i18n="cancel">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Uploaded file Preview box -->
+        <div class="acq-preview-box hidden" id="docPreviewContainer" style="margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.02); width: 100%; max-width: 500px;">
+          <div class="preview-img-wrapper" style="height: 200px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 6px;">
+            <img id="docPreviewImg" src="" alt="Acquired Preview" style="width: 100%; height: 100%; object-fit: contain;" />
+          </div>
+          
+          <!-- Quality check results dashboard -->
+          <div class="quality-check-dashboard" id="qualityAssessmentDashboard" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; text-align: left; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
+              <span data-i18n="quality_check_title">Automatic Image Quality Check</span>
+              <span>Composite Score: <strong id="compositeQualityScore">95%</strong></span>
+            </div>
+            <div style="display: flex; justify-content: space-between;"><span data-i18n="focus_verification">Intake Focus Verification</span> <span style="color: var(--color-minimal); font-weight: 700;">PASS</span></div>
+            <div style="display: flex; justify-content: space-between;"><span data-i18n="lighting_detection">Uniform Lighting Detection</span> <span style="color: var(--color-minimal); font-weight: 700;">PASS</span></div>
+            <div style="display: flex; justify-content: space-between;"><span data-i18n="blur_movement">Blur &amp; Movement Check</span> <span style="color: var(--color-minimal); font-weight: 700;">PASS</span></div>
+          </div>
+
+          <!-- DICOM metadata parsing dashboard -->
+          <div class="dicom-header-panel hidden" id="dicomMetadataPanel" style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 6px; font-size: 12px; text-align: left;">
+            <div style="font-weight: 700; margin-bottom: 6px; color: var(--clinical-teal);">DICOM Header Telemetry</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+              <span style="color: var(--text-muted);">Imaging Modality:</span>
+              <strong id="dcmModality">—</strong>
+              <span style="color: var(--text-muted);">Manufacturer:</span>
+              <strong id="dcmManufacturer">—</strong>
+              <span style="color: var(--text-muted);">Medical Institution:</span>
+              <strong id="dcmInstitution">—</strong>
+              <span style="color: var(--text-muted);">Study Date:</span>
+              <strong id="dcmStudyDate">—</strong>
+            </div>
+          </div>
+
+          <button class="btn-clinical-primary" id="btnRunClinicalAnalysis" style="margin-top: 12px; width: 100%; padding: 10px;" onclick="runLiveClinicalAnalysis()">
+            Initiate Diagnostic Analysis
+          </button>
+        </div>
+
+        <!-- Diagnostics loading pipeline -->
+        <div class="acq-loader-card hidden" id="docLoaderContainer" style="margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 20px; background: rgba(0,0,0,0.02); text-align: center; width: 100%; max-width: 500px;">
+          <p style="font-weight: 700; color: var(--clinical-blue);">Scanning Wound Telemetry...</p>
+          <div class="loader-pipeline" style="text-align: left; max-width: 260px; margin: 12px auto; display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+            <div class="loader-step" id="docStep1"><span style="margin-right: 6px;">🟢</span><span>Vision Module Scanning</span></div>
+            <div class="loader-step" id="docStep2"><span style="margin-right: 6px;">🟢</span><span>Tissue Damage Estimation</span></div>
+            <div class="loader-step" id="docStep3"><span style="margin-right: 6px;">🟢</span><span>Severity Assessment</span></div>
+            <div class="loader-step" id="docStep4"><span style="margin-right: 6px;">🟢</span><span>Infection Risk Mapping</span></div>
+            <div class="loader-step" id="docStep5"><span style="margin-right: 6px;">🟢</span><span>Differential Diagnostics</span></div>
+          </div>
+          <div class="loader-progress-track" style="height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden; margin-top: 12px;">
+            <div id="docProgressBar" style="width: 0%; height: 100%; background: var(--clinical-teal);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Workspace: Rendered only after file upload -->
+      <div class="active-case-content hidden" id="activeCaseContent" style="display: flex; gap: 24px; align-items: start; width: 100%;">
+        
+        <!-- Left Column: Diagnostic Viewport & Simulations -->
+        <div class="detail-col" style="flex: 1; display: flex; flex-direction: column; gap: 24px; min-width: 0;">
+          
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="font-size: 14px; text-transform: uppercase; color: var(--clinical-blue); font-weight: 700; letter-spacing: 0.5px;">Diagnostic Viewport</h3>
+              <button class="btn-clinical-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="resetWorkstation()">
+                ← Analyze Another Image
+              </button>
+            </div>
+            
+            <div class="workspace-tabs" style="display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+              <button class="workspace-tab-btn active" id="tabBtnHeatmap" onclick="switchWorkspaceTab('heatmap')">AI Heatmap</button>
+              <button class="workspace-tab-btn" id="tabBtnSlider" onclick="switchWorkspaceTab('slider')">Before &amp; After</button>
+              <button class="workspace-tab-btn" id="tabBtnMesh" onclick="switchWorkspaceTab('mesh')">3D Topography</button>
+              <button class="workspace-tab-btn" id="tabBtnForecast" onclick="switchWorkspaceTab('forecast')">30-Day Forecast</button>
+            </div>
+
+            <!-- Tab 1: Attention Heatmap -->
+            <div id="tabContentHeatmap" class="tab-viewport">
+              <div class="wound-image-container-relative" style="position: relative; border-radius: 8px; overflow: hidden; background: #000;">
+                <img id="detWoundImage" src="" alt="Clinical Wound Capture" style="width: 100%; display: block; max-height: 400px; object-fit: contain;" />
+                <canvas id="heatmapCanvasOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">* Red zones highlight tissue regions of clinical interest.</span>
+                <button class="btn-clinical-secondary" style="font-size: 11px; padding: 6px 12px;" id="btnToggleHeatmap" onclick="toggleHeatmapOverlay()">
+                  Toggle Heatmap
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab 2: Before & After slider -->
+            <div id="tabContentSlider" class="tab-viewport hidden">
+              <div class="slider-container-relative" id="sliderContainer" style="position: relative; overflow: hidden; background: #000; border-radius: 8px; height: 350px;">
+                <img class="slider-img" id="sliderCurrentImg" src="" alt="Current Intake" style="width: 100%; height: 100%; object-fit: contain; position: absolute;" />
+                <div class="slider-overlay-img" id="sliderBeforeOverlay" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; border-right: 2px solid var(--clinical-teal);">
+                  <img class="slider-img" id="sliderBeforeImg" src="" alt="Initial Intake" style="width: 100%; height: 100%; object-fit: contain; max-width: none;" />
+                </div>
+                <div class="slider-handle" id="sliderHandle" style="position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: var(--clinical-teal); cursor: ew-resize; transform: translateX(-50%);">
+                  <div class="slider-handle-dot" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; background: var(--clinical-teal); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">↔</div>
+                </div>
+              </div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center;">Drag the handle to compare Initial Intake (left) vs Current Status (right)</p>
+            </div>
+
+            <!-- Tab 3: 3D Topography Mesh -->
+            <div id="tabContentMesh" class="tab-viewport hidden">
+              <div style="background: #111; border-radius: 8px; padding: 8px;">
+                <canvas id="topography3DCanvas" class="viewport-canvas" style="width: 100%; height: 300px; display: block; background: #0c162b;"></canvas>
+              </div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center;">Drag inside viewport to rotate simulated 3D tissue topography model</p>
+            </div>
+
+            <!-- Tab 4: 30-Day Simulation Forecast -->
+            <div id="tabContentForecast" class="tab-viewport hidden">
+              <div style="background: #111; border-radius: 8px; padding: 8px;">
+                <canvas id="simulationForecastCanvas" class="viewport-canvas" style="width: 100%; height: 260px; display: block; background: #0c162b;"></canvas>
+              </div>
+              <div class="sim-controls-row" style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+                <button class="btn-clinical-secondary" style="padding: 6px 12px; font-size: 11px;" id="btnPlaySimulation" onclick="playForecastSimulation()">Play Simulation</button>
+                <button class="btn-clinical-secondary" style="padding: 6px 12px; font-size: 11px;" id="btnPauseSimulation" onclick="pauseForecastSimulation()">Pause</button>
+                <button class="btn-clinical-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="resetForecastSimulation()">Reset</button>
+                <span id="forecastDayLabel" style="font-size: 12px; font-weight: 800; margin-left: auto; color: var(--clinical-teal);">Day 1</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gauges for Triage and Healing -->
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-sub); margin-bottom: 16px; font-weight: 700;">Diagnostic Telemetry Overview</h4>
+            <div class="gauges-row" style="display: flex; justify-content: space-around; gap: 16px; margin-bottom: 20px;">
+              <div class="gauge-box" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+                <div class="gauge-svg-container" style="position: relative; width: 90px; height: 90px;">
+                  <svg width="90" height="90">
+                    <circle class="gauge-track" cx="45" cy="45" r="38" stroke="var(--border)" stroke-width="6" fill="transparent"></circle>
+                    <circle class="gauge-fill critical" id="gaugeSeverityCircle" cx="45" cy="45" r="38" stroke="var(--color-critical)" stroke-width="6" stroke-dasharray="238.76" stroke-dashoffset="100" fill="transparent" style="transition: stroke-dashoffset 0.5s ease;"></circle>
+                  </svg>
+                  <div class="gauge-text" id="gaugeSeverityText" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">80%</div>
+                </div>
+                <span class="gauge-title" style="font-size: 11px; margin-top: 8px; font-weight: 600; color: var(--text-muted);">Severity Assessment</span>
+              </div>
+
+              <div class="gauge-box" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+                <div class="gauge-svg-container" style="position: relative; width: 90px; height: 90px;">
+                  <svg width="90" height="90">
+                    <circle class="gauge-track" cx="45" cy="45" r="38" stroke="var(--border)" stroke-width="6" fill="transparent"></circle>
+                    <circle class="gauge-fill teal" id="gaugeRecoveryCircle" cx="45" cy="45" r="38" stroke="var(--clinical-teal)" stroke-width="6" stroke-dasharray="238.76" stroke-dashoffset="50" fill="transparent" style="transition: stroke-dashoffset 0.5s ease;"></circle>
+                  </svg>
+                  <div class="gauge-text" id="gaugeRecoveryText" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">74%</div>
+                </div>
+                <span class="gauge-title" style="font-size: 11px; margin-top: 8px; font-weight: 600; color: var(--text-muted);">Healing Potential</span>
+              </div>
+            </div>
+
+            <div class="image-telemetry-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid var(--border); padding-top: 16px; font-size: 12px;">
+              <div><span style="color: var(--text-muted);">Redness Ratio:</span> <strong id="imgRedRatio" style="color: var(--text-main);">1.42</strong></div>
+              <div><span style="color: var(--text-muted);">Avg Brightness:</span> <strong id="imgBrightness" style="color: var(--text-main);">104</strong></div>
+              <div><span style="color: var(--text-muted);">Resolution:</span> <strong id="imgResolution" style="color: var(--text-main);">1024x768px</strong></div>
+              <div><span style="color: var(--text-muted);">Imaging Type:</span> <strong id="imgModality" style="color: var(--text-main);">Optical Cam</strong></div>
+            </div>
+            
+            <!-- DICOM Header Info -->
+            <div id="dicomMetadataCard" class="hidden" style="margin-top: 12px; padding: 12px; background: rgba(179,142,93,0.05); border-radius: 8px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; font-size: 11px; color: var(--clinical-teal); text-transform: uppercase; margin-bottom: 6px;">DICOM Metadata Telemetry</div>
+              <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 4px; font-size: 11px;">
+                <span style="color: var(--text-muted);">Manufacturer:</span> <strong id="dcmManufacturer" style="color: var(--text-main);">—</strong>
+                <span style="color: var(--text-muted);">Institution:</span> <strong id="dcmInstitution" style="color: var(--text-main);">—</strong>
+                <span style="color: var(--text-muted);">Study Date:</span> <strong id="dcmStudyDate" style="color: var(--text-main);">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Longitudinal Timeline Tracking -->
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-sub); margin-bottom: 12px; font-weight: 700;" data-i18n="history_card_title">Longitudinal Wound Area Tracker</h4>
+            <div class="longitudinal-timeline-selectors" style="display: flex; gap: 4px; margin-bottom: 12px;">
+              <button class="timeline-sel-btn active" id="btnLongDay1" onclick="selectTimelineChartPoint(0)">Week 1</button>
+              <button class="timeline-sel-btn" id="btnLongDay5" onclick="selectTimelineChartPoint(1)">Week 2</button>
+              <button class="timeline-sel-btn" id="btnLongDay10" onclick="selectTimelineChartPoint(2)">Week 3</button>
+              <button class="timeline-sel-btn" id="btnLongDay15" onclick="selectTimelineChartPoint(3)">Week 4</button>
+            </div>
+            <div class="graph-and-trend">
+              <div class="graph-wrapper" style="height: 160px; width: 100%;">
+                <canvas id="healingProgressCanvas" width="450" height="150" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+              <div class="trend-summary" style="display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                <span class="trend-title" style="font-size: 11px; color: var(--text-muted); font-weight: 600;" data-i18n="overall_progress">Wound Shrinkage</span>
+                <div class="trend-value-badge positive" id="detRecoveryTrend" style="margin-top: 6px; font-size: 11px; padding: 6px; border-radius: 4px; font-weight: 700;">
+                  Positive Trend
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Right Column: Advanced Diagnostic Telemetry, XAI, SOAP & Reports -->
+        <div class="detail-col" style="flex: 1; display: flex; flex-direction: column; gap: 24px; min-width: 0;">
+          
+          <!-- FEATURE 2: ADVANCED WOUND ANALYSIS -->
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <h4 style="font-size: 14px; text-transform: uppercase; color: var(--clinical-blue); font-weight: 700; margin-bottom: 16px; letter-spacing: 0.5px;" data-i18n="recent_analyses">Advanced Wound Diagnostics</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px;">
+              <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);" data-i18n="wound_type">Wound Classification</span>
+                <strong id="detWoundType" style="font-size: 15px; color: var(--text-main);">Burn Wound</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);" data-i18n="wound_stage">Wound Stage</span>
+                <strong id="detWoundStage" style="font-size: 15px; color: var(--text-main);">Stage 2</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);" data-i18n="severity_level">Triage Severity Level</span>
+                <strong id="detSeverity" class="text-severe" style="font-size: 15px;">Severe</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);" data-i18n="confidence">AI Confidence Score</span>
+                <strong id="detConfidence" style="font-size: 15px; color: var(--text-main);">89.4%</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);" data-i18n="infection_risk">Active Infection Risk</span>
+                <strong id="detInfectionRisk" style="font-size: 15px; color: var(--text-main);">Moderate (45%)</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);" data-i18n="healing_progress">Healing Potential Index</span>
+                <strong id="detHealingPotential" style="font-size: 15px; color: var(--clinical-teal);">74%</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="color: var(--text-muted);" data-i18n="expected_recovery">Est. Recovery Time</span>
+                <strong id="detRecoveryTime" style="font-size: 15px; color: var(--text-main);">28-35 Days</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="color: var(--text-muted);" data-i18n="severity_level">Clinical Risk Classification</span>
+                <strong id="detClinicalRisk" class="text-severe" style="font-size: 15px;">High Risk Category</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURE 3: EXPLAINABLE AI ANALYSIS & FEATURE 5: DIFFERENTIAL DIAGNOSTICS -->
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <h4 style="font-size: 14px; text-transform: uppercase; color: var(--clinical-blue); font-weight: 700; margin-bottom: 16px; letter-spacing: 0.5px;" data-i18n="differential_diagnostics">Explainable AI &amp; Differential Diagnostics</h4>
+            
+            <div style="margin-bottom: 20px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--clinical-teal); display: block; margin-bottom: 10px;" data-i18n="visual_rationale">Visual Rationale breakdown</span>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                <div style="background: rgba(122,28,41,0.03); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid var(--border);">
+                  <div style="font-size: 10px; color: var(--text-muted);" data-i18n="erythema_density">Erythema Density</div>
+                  <strong style="font-size: 14px; color: var(--clinical-blue);" id="xaiErythema">High (78%)</strong>
+                </div>
+                <div style="background: rgba(122,28,41,0.03); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid var(--border);">
+                  <div style="font-size: 10px; color: var(--text-muted);" data-i18n="border_irregularity">Border Irregularity</div>
+                  <strong style="font-size: 14px; color: var(--clinical-blue);" id="xaiBorders">Elevated</strong>
+                </div>
+                <div style="background: rgba(122,28,41,0.03); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid var(--border);">
+                  <div style="font-size: 10px; color: var(--text-muted);" data-i18n="tissue_sloughing">Tissue Sloughing</div>
+                  <strong style="font-size: 14px; color: var(--clinical-blue);" id="xaiSlough">None</strong>
+                </div>
+              </div>
+              <p style="font-size: 11.5px; color: var(--text-sub); margin-top: 10px; line-height: 1.4;" id="xaiExplanationText">Predictive model triggered primarily by localized peripheral redness density and micro-vascular patterns near the wound margins.</p>
+            </div>
+
+            <div>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--clinical-teal); display: block; margin-bottom: 10px;" data-i18n="differential_diagnostics">Ranked Differential Diagnostics</span>
+              <div style="display: flex; flex-direction: column; gap: 8px;" id="diffDiagnosticsContainer">
+                <!-- Populated by JS: candidate conditions list with visual percentage bars -->
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURE 6: CLINICAL INSIGHTS PANEL -->
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <h4 style="font-size: 14px; text-transform: uppercase; color: var(--clinical-blue); font-weight: 700; margin-bottom: 16px; letter-spacing: 0.5px;" data-i18n="telemetry_index">AI Clinical Insights Co-Pilot</h4>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12.5px;">
+              <div style="display: flex; gap: 10px;">
+                <span style="font-size: 16px;">👁️</span>
+                <div>
+                  <strong data-i18n="key_observations">Key Observations:</strong>
+                  <p style="color: var(--text-sub); margin: 2px 0 0;" id="insightObservations">Granulation tissue beginning to form at borders. Surrounding margins show mild warmth indications.</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <span style="font-size: 16px;">⚠️</span>
+                <div>
+                  <strong data-i18n="potential_concerns">Potential Concerns:</strong>
+                  <p style="color: var(--text-sub); margin: 2px 0 0;" id="insightConcerns">Possible localized moisture buildup under dressing. Monitor exudate volume.</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <span style="font-size: 16px;">🛑</span>
+                <div>
+                  <strong data-i18n="healing_barriers">Healing Barriers:</strong>
+                  <p style="color: var(--text-sub); margin: 2px 0 0;" id="insightBarriers">Peripheral pressure friction. Offloading is recommended to maintain recovery rate.</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <span style="font-size: 16px;">🩺</span>
+                <div>
+                  <strong data-i18n="attention_points">Attention Points:</strong>
+                  <p style="color: var(--text-sub); margin: 2px 0 0;" id="insightAttention">Review dressing protocol every 48 hours. Inspect margins for necrotic tissue formation.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURE 8: SOAP SOAP NOTE GENERATOR -->
+          <div class="clinical-card glass-panel" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h4 style="font-size: 14px; text-transform: uppercase; color: var(--clinical-blue); font-weight: 700; letter-spacing: 0.5px;">SOAP Note Generator</h4>
+              <button class="btn-clinical-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="copySoapNote()">
+                📋 Copy SOAP Note
+              </button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12.5px;">
+              <div>
+                <span style="font-weight: 700; color: var(--clinical-teal);" data-i18n="soap_subjective">SUBJECTIVE (S):</span>
+                <textarea id="soapSubjective" class="clinical-textarea" style="width: 100%; height: 60px; margin-top: 4px; padding: 8px; font-family: inherit; font-size: 12px;" placeholder="Patient reports mild throbbing pain..."></textarea>
+              </div>
+              <div>
+                <span style="font-weight: 700; color: var(--clinical-teal);" data-i18n="soap_objective">OBJECTIVE (O):</span>
+                <textarea id="soapObjective" class="clinical-textarea" style="width: 100%; height: 60px; margin-top: 4px; padding: 8px; font-family: inherit; font-size: 12px;" placeholder="Erythema observed. Border irregular..."></textarea>
+              </div>
+              <div>
+                <span style="font-weight: 700; color: var(--clinical-teal);" data-i18n="soap_assessment">ASSESSMENT (A):</span>
+                <textarea id="soapAssessment" class="clinical-textarea" style="width: 100%; height: 60px; margin-top: 4px; padding: 8px; font-family: inherit; font-size: 12px;" placeholder="Stage 2 wound with moderate infection risk..."></textarea>
+              </div>
+              <div>
+                <span style="font-weight: 700; color: var(--clinical-teal);" data-i18n="soap_plan">PLAN (P):</span>
+                <textarea id="soapPlan" class="clinical-textarea" style="width: 100%; height: 60px; margin-top: 4px; padding: 8px; font-family: inherit; font-size: 12px;" placeholder="Keep dry, change dressing, schedule follow up..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURE 9: AI CLINICAL CO-PILOT -->
+          <div class="clinical-card glass-panel" style="padding: 20px; background: rgba(179,142,93,0.05); border: 1.5px solid var(--clinical-teal);">
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 20px;">🧠</span>
+              <h4 style="font-size: 14px; text-transform: uppercase; color: var(--clinical-blue); font-weight: 700; margin: 0; letter-spacing: 0.5px;" data-i18n="copilot_title">Clinician Co-Pilot Telemetry</h4>
+            </div>
+            <div style="font-size: 13px; line-height: 1.5; color: var(--text-sub);">
+              <p id="copilotSummary" style="margin-bottom: 8px;"><strong>Executive Summary:</strong> The telemetry indicates a healing trajectory at 74% efficiency, but attention is needed regarding mild redness concentration at the margins.</p>
+              <div style="padding: 8px; border-radius: 6px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.1); margin-top: 8px; display: flex; gap: 8px; align-items: start;">
+                <span style="font-size: 14px; margin-top: 2px;">⚠️</span>
+                <div style="font-size: 11px;">
+                  <strong style="color: var(--color-critical);">Critical Risk Telemetry:</strong>
+                  <span id="copilotRiskWarning">Monitor closely for signs of bacterial colonisation. Triage priority score is currently elevated.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURE 10: CLINICAL REPORT GENERATOR -->
+          <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <button class="btn-clinical-primary" style="padding: 12px 24px;" onclick="openCaseReport()" data-i18n="generate_pdf">
+              📄 Generate Clinical PDF Report
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+      </div> <!-- Close #doctorCasesView -->
+    </div> <!-- Close .workspace-content -->
+  </div> <!-- Close .portal-workspace -->
+</div> <!-- Close #doctorWorkspace -->
+
+  <!-- ── CASE REPORT PRINT MODAL (HIDDEN) ─────────────────────── -->
+  <div class="report-overlay hidden" id="reportOverlay">
+    <div class="report-modal">
+      <div class="report-actions-bar">
+        <h3 style="color: #fff;">Clinical CDSS Telemetry Report</h3>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-clinical-primary" style="padding: 8px 16px; width: auto;" onclick="window.print()">Print PDF</button>
+          <button class="btn-clinical-secondary" onclick="closeCaseReport()">Close</button>
+        </div>
+      </div>
+      
+      <div class="printable-report" id="printableReportArea">
+        <div class="report-header">
+          <h2>SkinAid AI Clinical Report</h2>
+          <p>Clinical Decision Support Telemetry Report</p>
+        </div>
+        <div class="report-section">
+          <h3>1. Patient Demographics</h3>
+          <table class="report-table">
+            <tr>
+              <td><strong>Patient Name:</strong></td>
+              <td id="repPatientName">—</td>
+              <td><strong>Patient ID:</strong></td>
+              <td id="repPatientID">—</td>
+            </tr>
+            <tr>
+              <td><strong>Age:</strong></td>
+              <td id="repPatientAge">—</td>
+              <td><strong>Gender:</strong></td>
+              <td id="repPatientGender">—</td>
+            </tr>
+            <tr>
+              <td><strong>Report Date:</strong></td>
+              <td id="repReportDate">—</td>
+              <td><strong>Clinician:</strong></td>
+              <td>Dr. Smith, MD (REG-99120)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="report-section">
+          <h3>2. AI Wound Telemetry</h3>
+          <table class="report-table">
+            <tr>
+              <td><strong>Wound Type:</strong></td>
+              <td id="repWoundType">—</td>
+              <td><strong>Triage Severity:</strong></td>
+              <td id="repSeverity">—</td>
+            </tr>
+            <tr>
+              <td><strong>AI Confidence Score:</strong></td>
+              <td id="repConfidence">—</td>
+              <td><strong>Infection Risk:</strong></td>
+              <td id="repInfectionRisk">—</td>
+            </tr>
+            <tr>
+              <td><strong>Healing Prediction:</strong></td>
+              <td colspan="3" id="repPrediction">—</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="report-section">
+          <h3>3. Healing Progress Trend</h3>
+          <table class="report-table">
+            <tr>
+              <td><strong>Current Progress:</strong></td>
+              <td id="repHealingPct">—</td>
+              <td><strong>Recovery Path:</strong></td>
+              <td id="repRecoveryTrend">—</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="report-section">
+          <h3>4. Clinician Observations & Notes</h3>
+          <div class="report-block-text" id="repNotes">
+            —
+          </div>
+        </div>
+
+        <div class="report-section">
+          <h3>5. Follow-Up Plan & Monitoring Schedule</h3>
+          <table class="report-table">
+            <tr>
+              <td><strong>Next Review Date:</strong></td>
+              <td id="repFollowUpDate">—</td>
+              <td><strong>Dressing Schedule:</strong></td>
+              <td id="repDressingSchedule">—</td>
+            </tr>
+            <tr>
+              <td><strong>Monitoring Schedule:</strong></td>
+              <td colspan="3" id="repMonitoringSchedule">—</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="report-section">
+          <h3>6. MDT Referral Status</h3>
+          <table class="report-table">
+            <tr>
+              <td><strong>Collaborating Specialist:</strong></td>
+              <td id="repCollabSpecialist">None Referred</td>
+              <td><strong>Direct Referral Dept:</strong></td>
+              <td id="repCollabDept">—</td>
+            </tr>
+            <tr>
+              <td><strong>Referral Directives:</strong></td>
+              <td colspan="3" id="repCollabNotes">—</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Physician Stamp / Signature Grid -->
+        <div class="report-section" style="margin-top: 40px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center; font-size: 12px;">
+            <div>
+              <div style="border-bottom: 1px solid #000; height: 50px;"></div>
+              <p style="margin-top: 6px; font-weight: 700;">Physician Signature</p>
+            </div>
+            <div>
+              <div style="border: 1px dashed #94a3b8; height: 50px; display: flex; align-items: center; justify-content: center; color: #94a3b8;">Stamp/Seal Area</div>
+              <p style="margin-top: 6px; font-weight: 700;">Official Clinical Seal</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-footer">
+          <p>Report generated automatically by RoboHeal AI Clinical Decision Support Platform.</p>
+          <p style="font-size: 8.5px; color: #64748b; margin-top: 4px;">DISCLAIMER: AI-generated telemetry is for decision support only. Do not make final clinical decisions based on computer telemetry alone.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/doctor.js') }}"></script>
+</body>
+</html>

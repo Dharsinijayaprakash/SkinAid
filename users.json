@@ -1,0 +1,116 @@
+{
+    "patients": {
+        "john@roboheal.org": {
+            "name": "John Doe",
+            "password": "password123",
+            "history": [
+                {
+                    "id": "CASE-2891",
+                    "date": "2026-05-15",
+                    "wound": "Laceration",
+                    "severity": "Mild",
+                    "progress": 85,
+                    "days": "5-7 Days",
+                    "img": ""
+                },
+                {
+                    "id": "CASE-4902",
+                    "date": "2026-05-24",
+                    "wound": "Abrasion",
+                    "severity": "Minimal",
+                    "progress": 95,
+                    "days": "3-5 Days",
+                    "img": ""
+                }
+            ]
+        },
+        "emily@roboheal.org": {
+            "name": "Emily Davis",
+            "password": "password123",
+            "history": [
+                {
+                    "id": "CASE-1084",
+                    "date": "2026-06-01",
+                    "wound": "Burn Wound",
+                    "severity": "Severe",
+                    "progress": 40,
+                    "days": "28-35 Days",
+                    "img": ""
+                }
+            ]
+        },
+        "dharsinijayaprakash09@gmail.com": {
+            "name": "Dharsini",
+            "password": "123456",
+            "history": [
+                {
+                    "id": "CASE-4665",
+                    "date": "2026-06-04",
+                    "wound": "Laceration",
+                    "severity": "Moderate",
+                    "progress": 63,
+                    "days": "14-18 Days",
+                    "img": ""
+                },
+                {
+                    "id": "CASE-6023",
+                    "date": "2026-06-04",
+                    "wound": "Laceration",
+                    "severity": "Moderate",
+                    "progress": 63,
+                    "days": "14-18 \u0ba8\u0bbe\u0b9f\u0bcd\u0b95\u0bb3\u0bcd",
+                    "img": ""
+                },
+                {
+                    "id": "CASE-9212",
+                    "date": "2026-06-04",
+                    "wound": "Laceration",
+                    "severity": "Moderate",
+                    "progress": 63,
+                    "days": "14-18 Days",
+                    "img": ""
+                },
+                {
+                    "date": "2026-06-03",
+                    "days": "8-12 Days",
+                    "id": "CASE-8862",
+                    "img": "",
+                    "progress": 70,
+                    "severity": "Mild",
+                    "wound": "Contusion"
+                },
+                {
+                    "date": "2026-06-03",
+                    "days": "16-20 Days",
+                    "id": "CASE-9915",
+                    "img": "",
+                    "progress": 60,
+                    "severity": "Moderate",
+                    "wound": "Laceration"
+                }
+            ]
+        }
+    },
+    "doctors": {
+        "smith@skinaid.org": {
+            "name": "Dr. Smith",
+            "password": "password123",
+            "major": "Dermatology",
+            "cases": [
+                "CASE-9021",
+                "CASE-4091",
+                "CASE-1082",
+                "CASE-3392",
+                "CASE-1204"
+            ]
+        },
+        "shivanida.03@gmail.com": {
+            "name": "Shivani",
+            "password": "123456",
+            "major": "Dermatology",
+            "cases": [
+                "CASE-8077"
+            ]
+        }
+    }
+}
